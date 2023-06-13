@@ -40,12 +40,12 @@ def split_key(key, max_keys=0):
     """
     parts = [x for x in re.split(SPLIT_REGEX, key) if x != "."]
     result = []
-    while len(parts) > 0:
+    while parts:
         if max_keys > 0 and len(result) == max_keys:
             break
         result.append(parts.pop(0))
 
-    if len(parts) > 0:
+    if parts:
         result.append(".".join(parts))
     return result
 
@@ -165,7 +165,7 @@ class DottedList(DottedCollection, collections.MutableSequence):
             return self.store[index]
 
         if isinstance(index, int) \
-                or (isinstance(index, basestring) and index.isdigit()):
+                    or (isinstance(index, basestring) and index.isdigit()):
             return self.store[int(index)]
 
         elif isinstance(index, basestring) and is_dotted_key(index):
@@ -183,11 +183,11 @@ class DottedList(DottedCollection, collections.MutableSequence):
             return target[alt_index]
 
         else:
-            raise IndexError('cannot get %s in %s' % (index, repr(self.store)))
+            raise IndexError(f'cannot get {index} in {repr(self.store)}')
 
     def __setitem__(self, index, value):
         if isinstance(index, int) \
-                or (isinstance(index, basestring) and index.isdigit()):
+                    or (isinstance(index, basestring) and index.isdigit()):
             # If the index does not exist in the list but it's the same index
             # we would obtain by appending the value to the list we actually
             # append the value. (***)
@@ -201,23 +201,23 @@ class DottedList(DottedCollection, collections.MutableSequence):
 
             # (***)
             if int(my_index) not in self.store \
-                    and int(my_index) == len(self.store):
+                        and int(my_index) == len(self.store):
                 self.store.append(
                     DottedCollection._factory_by_index(alt_index))
 
             if not isinstance(self[int(my_index)], DottedCollection):
-                raise IndexError('cannot set "%s" in "%s" (%s)' % (
-                    alt_index, my_index, repr(self[int(my_index)])))
+                raise IndexError(
+                    f'cannot set "{alt_index}" in "{my_index}" ({repr(self[int(my_index)])})'
+                )
 
             self[int(my_index)][alt_index] = DottedCollection.factory(value)
 
         else:
-            raise IndexError('cannot use %s as index in %s' % (
-                index, repr(self.store)))
+            raise IndexError(f'cannot use {index} as index in {repr(self.store)}')
 
     def __delitem__(self, index):
         if isinstance(index, int) \
-                or (isinstance(index, basestring) and index.isdigit()):
+                    or (isinstance(index, basestring) and index.isdigit()):
             del self.store[int(index)]
 
         elif isinstance(index, basestring) and is_dotted_key(index):
@@ -226,14 +226,14 @@ class DottedList(DottedCollection, collections.MutableSequence):
 
             # required by the dotted path
             if not isinstance(target, DottedCollection):
-                raise IndexError('cannot delete "%s" in "%s" (%s)' % (
-                    alt_index, my_index, repr(target)))
+                raise IndexError(
+                    f'cannot delete "{alt_index}" in "{my_index}" ({repr(target)})'
+                )
 
             del target[alt_index]
 
         else:
-            raise IndexError('cannot delete %s in %s' % (
-                index, repr(self.store)))
+            raise IndexError(f'cannot delete {index} in {repr(self.store)}')
 
     def to_python(self):
         """Returns a plain python list and converts to plain python objects all
@@ -349,10 +349,7 @@ class DottedDict(DottedCollection, collections.MutableMapping):
         my_key, alt_key = split_key(key, 1)
         target = self.store[my_key]
 
-        if not isinstance(target, DottedCollection):
-            return False
-
-        return alt_key in target
+        return False if not isinstance(target, DottedCollection) else alt_key in target
 
     def __keytransform__(self, key):
         return key
